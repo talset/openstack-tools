@@ -59,7 +59,8 @@ class NovaManage(object):
   def get_all_vm_flavors(self):
       "print flavors for each vm in the tenant"
       LOG.info('Start list flavors vms ...')
-      print self.nova.servers.list()
+      foreach server in self.nova.servers.list()
+        print server
   
   def export_vms_configs(self,export_all='/tmp/OSexport.json'):
       "export vms configurations like flavors, names, sshkey ..."
