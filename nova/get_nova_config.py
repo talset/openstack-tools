@@ -59,14 +59,27 @@ class NovaManage(object):
   def get_all_vm_flavors(self):
       "print flavors for each vm in the tenant"
       LOG.info('Start list flavors vms ...')
-      foreach server in self.nova.servers.list()
-        print server
-  
-  def export_vms_configs(self,export_all='/tmp/OSexport.json'):
+      for server in self.nova.servers.list():
+        print "%s %s" % (server.name, self.nova.flavors.get(server.flavor['id']).name)
+ 
+  def export_vms_configs(self,export_all):
       "export vms configurations like flavors, names, sshkey ..."
       LOG.info('Start export configs ...')
       print ("Export in %s" % export_all)
-
+      for server in self.nova.servers.list():
+        name       = server.name
+        flavor     = self.nova.flavors.get(server.flavor['id']).name
+        image      = self.nova.images.get(server.image['id']).name
+        security   = (', '.join(str(x['name']) for x in server.security_groups))
+        keyname    = server.key_name
+        addresses   = (', '.join(str(x['addr']) for x in server.addresses['private_14']))
+        print "|%s| |%s| |%s| |%s| |%s| |%s|" % (name,
+                                       flavor,
+                                       image,
+                                       security,
+                                       keyname,
+                                       addresses,
+        )
 
 if __name__ == "__main__":
 
