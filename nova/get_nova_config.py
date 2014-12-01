@@ -72,7 +72,7 @@ class NovaManage(object):
         image      = self.nova.images.get(server.image['id']).name
         security   = (', '.join(str(x['name']) for x in server.security_groups))
         keyname    = server.key_name
-        addresses   = (', '.join(str(x['addr']) for x in server.addresses['private_14']))
+        addresses  = ', '.join([inter[0].get('addr') for inter in server.addresses.values()])
         print "|%s| |%s| |%s| |%s| |%s| |%s|" % (name,
                                        flavor,
                                        image,
