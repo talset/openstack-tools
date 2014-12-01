@@ -43,17 +43,17 @@ ARGS = PARSER.parse_args()
 
 class NovaManage(object):
 
-  def __init__(self, nova_version, os_username, os_password, os_tenant_id, os_auth_url):
+  def __init__(self, nova_version, os_username, os_password, os_tenant_name, os_auth_url):
     logformat =  '%(asctime)s %(levelname)s -: %(message)s'
     # Set logger formater
     formatter = logging.Formatter(logformat)
     hdl = logging.StreamHandler(); hdl.setFormatter(formatter); LOG.addHandler(hdl)
 
-    print "%s %s %s %s %s" % (nova_version, os_username, os_password, os_tenant_id, os_auth_url)
+    print "%s %s %s %s %s" % (nova_version, os_username, os_password, os_tenant_name, os_auth_url)
     self.nova = Client(nova_version,
                   os_username,
                   os_password,
-                  os_tenant_id,
+                  os_tenant_name,
                   os_auth_url)
 
   def get_all_vm_flavors(self):
@@ -86,7 +86,7 @@ if __name__ == "__main__":
    novamanage = NovaManage(nova_version=ARGS.nova_version,
                            os_username=ARGS.os_username,
                            os_password=ARGS.os_password,
-                           os_tenant_id=ARGS.os_tenant_id,
+                           os_tenant_name=ARGS.os_tenant_name,
                            os_auth_url=ARGS.os_auth_url)
 
    # List flavors
