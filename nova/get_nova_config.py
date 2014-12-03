@@ -67,12 +67,16 @@ class NovaManage(object):
       LOG.info('Start export configs ...')
       print ("Export in %s" % export_all)
       for server in self.nova.servers.list():
-        name       = server.name
-        flavor     = self.nova.flavors.get(server.flavor['id']).name
-        image      = self.nova.images.get(server.image['id']).name
-        security   = (', '.join(str(x['name']) for x in server.security_groups))
-        keyname    = server.key_name
-        addresses  = ', '.join([inter[0].get('addr') for inter in server.addresses.values()])
+        name        = server.name
+        flavor      = self.nova.flavors.get(server.flavor['id']).name
+        image       = self.nova.images.get(server.image['id']).name
+        security    = (', '.join(str(x['name']) for x in server.security_groups))
+        keyname     = server.key_name
+        addresses   = ''
+        for inter in server.addresses.values():
+            for subnet in inter:
+                addresses += ' '+subnet.get('addr')
+        #addresses   = ', '.join([inter[0].get('addr') for inter in server.addresses.values()])
         print "|%s| |%s| |%s| |%s| |%s| |%s|" % (name,
                                        flavor,
                                        image,
