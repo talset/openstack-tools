@@ -49,7 +49,6 @@ class NovaManage(object):
     formatter = logging.Formatter(logformat)
     hdl = logging.StreamHandler(); hdl.setFormatter(formatter); LOG.addHandler(hdl)
 
-    print "%s %s %s %s %s" % (nova_version, os_username, os_password, os_tenant_name, os_auth_url)
     self.nova = Client(nova_version,
                   os_username,
                   os_password,
@@ -64,11 +63,14 @@ class NovaManage(object):
 
 if __name__ == "__main__":
 
-   novamanage = NovaManage(nova_version=ARGS.nova_version,
-                           os_username=ARGS.os_username,
-                           os_password=ARGS.os_password,
-                           os_tenant_name=ARGS.os_tenant_name,
-                           os_auth_url=ARGS.os_auth_url)
+   if ARGS.nova_version and ARGS.os_username and ARGS.os_password and ARGS.os_tenant_name and ARGS.os_auth_url:
+       novamanage = NovaManage(nova_version=ARGS.nova_version,
+                             os_username=ARGS.os_username,
+                             os_password=ARGS.os_password,
+                             os_tenant_name=ARGS.os_tenant_name,
+                             os_auth_url=ARGS.os_auth_url)
+   else:
+       PARSER.print_help()
 
    # Export conf
    if ARGS.instance:
