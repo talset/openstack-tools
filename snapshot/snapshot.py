@@ -9,7 +9,7 @@ import datetime
 #from keystoneclient.auth.identity import v2
 #from keystoneclient import session
 from novaclient.client import Client
-from cinderclient.v2 import client as clientcinder
+from cinderclient import client as clientcinder
 
 # Init logging level with debug stream handler
 LOG = logging.getLogger()
@@ -87,6 +87,17 @@ class NovaManage(object):
                                       service_type="volume",
                                       insecure=True)
 
+    self.cinder.volume_snapshots.list()
+    self.cinder_endpoint_version=self.cinder.get_volume_api_version_from_endpoint()
+    self.cinder = clientcinder.Client(self.cinder_endpoint_version,
+                                      os_username,
+                                      os_password,
+                                      os_tenant_name,
+                                      os_auth_url,
+                                      service_type="volume",
+                                      insecure=True)
+
+
   def get_snapshot_list(self,type):
       "print snapshot"
       LOG.info('Start list snapshot ...')
@@ -110,11 +121,16 @@ class NovaManage(object):
       LOG.info('Start clean snapshot ...')
       startname='backup_'
       #snapname = 'backup_' +self.nova.servers.get(self.cinder.volumes.get(id).attachments[0]['server_id']).name+'_'+id+'_'+datetime.datetime.now().strftime('%Y%m%d')
-      print 'aaaaaaaaaaa%s' % self.cinder.get_volume_api_version_from_endpoint
+      #print 'aaaaaaaaaaa%s' % self.cinder.get_volume_api_version_from_endpoint()
+      if self.cinder_endpoint_version == '1':
+         argname='display_name'
+      else:
+         argname='name'
+
       if id == 'all':
         for volume_snapshots in self.cinder.volume_snapshots.list():
             #print dir(volume_snapshots)
-            print volume_snapshots.name
+            print volume_snapshots.display_name
             #display_name
             #if volume.name.startswith('backup'):
             #if self.cinder.get_volume_api_version_from_endpoint() == '1':
@@ -160,8 +176,7 @@ class NovaManage(object):
           if volume.status == 'in-use':
             snapname = 'backup_'+self.nova.servers.get(volume.attachments[0]['server_id']).name+'_'+volume.id+'_'+datetime.datetime.now().strftime('%Y%m%d')
             print "start snap image %s" % snapname
-
-            if self.cinder.get_volume_api_version_from_endpoint() == '1':
+            if self.cinder_endpoint_version == '1':
               self.cinder.volume_snapshots.create(volume.id,force=True,display_name=snapname)
             else:
               self.cinder.volume_snapshots.create(volume.id,force=True,name=snapname)
@@ -170,7 +185,7 @@ class NovaManage(object):
         print "start snapshot image %s" % id
         snapname = 'backup_' +self.nova.servers.get(self.cinder.volumes.get(id).attachments[0]['server_id']).name+'_'+id+'_'+datetime.datetime.now().strftime('%Y%m%d')
         print snapname
-        if self.cinder.get_volume_api_version_from_endpoint() == '1':
+        if self.cinder_endpoint_version == '1':
           self.cinder.volume_snapshots.create(id,force=True,display_name=snapname)
         else:
           self.cinder.volume_snapshots.create(id,force=True,name=snapname)
