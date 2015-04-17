@@ -144,37 +144,19 @@ class NovaManage(object):
       LOG.info('Start volume snapshot ...')
       if id == 'all':
         for volume in self.cinder.volumes.list():
-          print "start snap image %s" % (volume.id)
-          snapname = 'backup_' +volume.id+'_'+datetime.datetime.now().strftime('%Y%m%d')
-          print snapname
-          #self.nova.servers.get(id).backup(snapname, 'daily', IMAGE_RET)
+          if volume.status == 'in-use':
+            print "start snap image %s" % (volume.id)
+            #print volume.attachments[0]
+            #print dir(volume.attachments[0])
+            snapname = 'backup_'+self.nova.servers.get(volume.attachments[0]['server_id']).name+'_'+volume.id+'_'+datetime.datetime.now().strftime('%Y%m%d')
+            print snapname
+            #self.cinder.volume_snapshots(volume.id,force=True,name=snapname)
       else:
         print "start snapshot image %s" % id
-        snapname = 'backup_' +self.cinder.volumes.get(id).id+'_'+datetime.datetime.now().strftime('%Y%m%d')
+        snapname = 'backup_' +self.nova.servers.get(self.cinder.volumes.get(id).attachments[0]['server_id']).name+'_'+id+'_'+datetime.datetime.now().strftime('%Y%m%d')
         #self.nova.servers.get(id).backup(snapname, 'daily', VOLUME_RET)
-
-#  def export_vms_configs(self,export_all):
-#      "export vms configurations like flavors, names, sshkey ..."
-#      LOG.info('Start export configs ...')
-#      print ("Export in %s" % export_all)
-#      for server in self.nova.servers.list():
-#        name        = server.name
-#        flavor      = self.nova.flavors.get(server.flavor['id']).name
-#        image       = self.nova.images.get(server.image['id']).name
-#        security    = (', '.join(str(x['name']) for x in server.security_groups))
-#        keyname     = server.key_name
-#        addresses   = ''
-#        for inter in server.addresses.values():
-#            for subnet in inter:
-#                addresses += ' '+subnet.get('addr')
-#        #addresses   = ', '.join([inter[0].get('addr') for inter in server.addresses.values()])
-#        print "|%s| |%s| |%s| |%s| |%s| |%s|" % (name,
-#                                       flavor,
-#                                       image,
-#                                       security,
-#                                       keyname,
-#                                       addresses,
-#        )
+        print snapname
+        #self.cinder.volume_snapshots(id,force=True,name=snapname)
 
 if __name__ == "__main__":
 
