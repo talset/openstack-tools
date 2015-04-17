@@ -9,11 +9,12 @@ import datetime
 #from keystoneclient.auth.identity import v2
 #from keystoneclient import session
 from novaclient.client import Client
+from cinderclient.v1 import client as clientcinder
 
 # Init logging level with debug stream handler
 LOG = logging.getLogger()
 LOG.setLevel(logging.CRITICAL)
-LOG.setLevel(logging.INFO)
+#LOG.setLevel(logging.INFO)
 
 INSECURE=True
 
@@ -78,26 +79,38 @@ class NovaManage(object):
                   os_auth_url,
                   insecure=INSECURE)
 
+    self.cinder = clientcinder.Client(os_username,
+                                      os_password,
+                                      os_tenant_name,
+                                      os_auth_url,
+                                      service_type="volume")
+
   def get_snapshot_list(self,type):
       "print snapshot"
       LOG.info('Start list snapshot ...')
       print "Snapshot Images : "
       for image in self.nova.images.list():
-        #if re.search('^backup_', image.name):
         if image.name.startswith('backup'):
           print "%s" % (image.name)
 
       #print self.nova.volumes.list()
-      print self.nova.volume_snapshots.list()
+      #print self.nova.volume_snapshots.list()
+      #print self.cinder.volumes.list()
 
-      #print "Snapshot Volumes : "
-      #for volume in self.nova.volumes.list():
-      #  print "%s" % (volume.name)
 
-  def clean_snapshot(self,type):
+      print "Snapshot Volumes : "
+      for volume in self.cinder.volume_snapshots.list():
+        #help(volume)
+        print "%s %s" % (volume.id, volume.display_name)
+
+  def clean_snapshot(self,id):
       "clean snapshot"
       LOG.info('Start clean snapshot ...')
-      print "clean"
+      startname='backup_'+id
+      for volume in self.cinder.volume_snapshots.list():
+        if image.name.startswith(startname):
+          #help(volume)
+          print "%s %s" % (volume.id, volume.display_name)
 
   def snapshot(self,type,id):
       "Start snapshot"
@@ -118,28 +131,27 @@ class NovaManage(object):
       if id == 'all':
         for server in self.nova.servers.list():
           print "start snap image %s" % (server.name)
-          snapname = 'backup_' +self.nova.servers.get(id).name+'_'+datetime.datetime.now().strftime('%Y%m%d')
+          snapname = 'backup_' +server.name+'_'+datetime.datetime.now().strftime('%Y%m%d')
           self.nova.servers.get(id).backup(snapname, 'daily', IMAGE_RET)
-          
       else:
         print "start snapshot image %s" % id
         snapname = 'backup_' +self.nova.servers.get(id).name+'_'+datetime.datetime.now().strftime('%Y%m%d')
         self.nova.servers.get(id).backup(snapname, 'daily', IMAGE_RET)
 
-    #datetime.datetime.now().strftime('%Y%m%d')
-    #backup(backup_name, backup_type, rotation)
-
-    #Backup a server instance.
-    #Parameters: 
-
-    #    backup_name – Name of the backup image
-    #    backup_type – The backup type, like ‘daily’ or ‘weekly’
-    #    rotation – Int parameter representing how many backups to keep around.
-
 
   def snap_volume(self,id):
       "Start volume snapshot"
       LOG.info('Start volume snapshot ...')
+      if id == 'all':
+        for volume in self.cinder.volumes.list():
+          print "start snap image %s" % (volume.id)
+          snapname = 'backup_' +volume.id+'_'+datetime.datetime.now().strftime('%Y%m%d')
+          print snapname
+          #self.nova.servers.get(id).backup(snapname, 'daily', IMAGE_RET)
+      else:
+        print "start snapshot image %s" % id
+        snapname = 'backup_' +self.cinder.volumes.get(id).id+'_'+datetime.datetime.now().strftime('%Y%m%d')
+        #self.nova.servers.get(id).backup(snapname, 'daily', VOLUME_RET)
 
 #  def export_vms_configs(self,export_all):
 #      "export vms configurations like flavors, names, sshkey ..."
