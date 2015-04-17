@@ -130,15 +130,11 @@ class NovaManage(object):
       if id == 'all':
         for volume_snapshots in self.cinder.volume_snapshots.list():
             #print dir(volume_snapshots)
-            print volume_snapshots.display_name
-            #display_name
-            #if volume.name.startswith('backup'):
-            #if self.cinder.get_volume_api_version_from_endpoint() == '1':
-            #  self.cinder.volume_snapshots.create(volume.id,force=True,display_name=snapname)
-            #else:
-            #  self.cinder.volume_snapshots.create(volume.id,force=True,name=snapname)
-            #fonction clean
+            #| 10604581-62b7-4024-924f-407206350efd | aea8669a-5b8e-4533-b47b-72456dfca43f | available | backup_testinstance_aea8669a-5b8e-4533-b47b-72456dfca43f_20150417 |  5   |
+            if volume_snapshots.display_name.startswith('backup_'):
+                print volume_snapshots.display_name
       else:
+        #if re.search('^backup_.*ID', volume_snapshots.display_name)
         print "clean id"
 
   def snapshot(self,type,id):
