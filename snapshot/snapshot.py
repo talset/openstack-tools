@@ -9,7 +9,7 @@ import datetime
 #from keystoneclient.auth.identity import v2
 #from keystoneclient import session
 from novaclient.client import Client
-from cinderclient.v1 import client as clientcinder
+from cinderclient.v2 import client as clientcinder
 
 # Init logging level with debug stream handler
 LOG = logging.getLogger()
@@ -79,7 +79,8 @@ class NovaManage(object):
                   os_auth_url,
                   insecure=True)
 
-    self.cinder = clientcinder.Client(os_username,
+    self.cinder = clientcinder.Client(nova_version,
+                                      os_username,
                                       os_password,
                                       os_tenant_name,
                                       os_auth_url,
@@ -109,15 +110,17 @@ class NovaManage(object):
       LOG.info('Start clean snapshot ...')
       startname='backup_'
       #snapname = 'backup_' +self.nova.servers.get(self.cinder.volumes.get(id).attachments[0]['server_id']).name+'_'+id+'_'+datetime.datetime.now().strftime('%Y%m%d')
+      print 'aaaaaaaaaaa%s' % self.cinder.get_volume_api_version_from_endpoint
       if id == 'all':
         for volume_snapshots in self.cinder.volume_snapshots.list():
-            print dir(volume_snapshots)
-            display_name
+            #print dir(volume_snapshots)
+            print volume_snapshots.name
+            #display_name
             #if volume.name.startswith('backup'):
-            if self.cinder.get_volume_api_version_from_endpoint() == '1':
-              self.cinder.volume_snapshots.create(volume.id,force=True,display_name=snapname)
-            else:
-              self.cinder.volume_snapshots.create(volume.id,force=True,name=snapname)
+            #if self.cinder.get_volume_api_version_from_endpoint() == '1':
+            #  self.cinder.volume_snapshots.create(volume.id,force=True,display_name=snapname)
+            #else:
+            #  self.cinder.volume_snapshots.create(volume.id,force=True,name=snapname)
             #fonction clean
       else:
         print "clean id"
