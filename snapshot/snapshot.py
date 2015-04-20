@@ -87,7 +87,7 @@ class NovaManage(object):
                                       service_type="volume",
                                       insecure=True)
 
-    self.cinder.volume_snapshots.list()
+    self.cinder.authenticate()
     self.cinder_endpoint_version=self.cinder.get_volume_api_version_from_endpoint()
     self.cinder = clientcinder.Client(self.cinder_endpoint_version,
                                       os_username,
@@ -127,15 +127,28 @@ class NovaManage(object):
       else:
          argname='name'
 
+
+      volumes_list={}
       if id == 'all':
         for volume_snapshots in self.cinder.volume_snapshots.list():
+            volume_name=str(getattr(volume_snapshots, argname))
             #print dir(volume_snapshots)
             #| 10604581-62b7-4024-924f-407206350efd | aea8669a-5b8e-4533-b47b-72456dfca43f | available | backup_testinstance_aea8669a-5b8e-4533-b47b-72456dfca43f_20150417 |  5   |
-            if volume_snapshots.display_name.startswith('backup_'):
-                print volume_snapshots.display_name
+            if volume_name.startswith('backup_'):
+                #Remove DATE
+                volume_name=volume_name[:-9]
+                volumes_list[volume_name] = {volume_snapshots.id: volume_snapshots.created_at}
       else:
-        #if re.search('^backup_.*ID', volume_snapshots.display_name)
-        print "clean id"
+          for volume_snapshots in self.cinder.volume_snapshots.list():
+              #print dir(volume_snapshots)
+            if re.search('^backup_.*'+id, volume_snapshots.display_name):
+              volume_name=volume_name[:-9]
+              volumes_list[volume_name] = {volume_snapshots.id: volume_snapshots.created_at}
+              print "clean id"
+
+  def check_for_oldest(self,volumes_list,ret):
+      "Find useless snapshot"
+      print volumes_list
 
   def snapshot(self,type,id):
       "Start snapshot"
@@ -176,7 +189,7 @@ class NovaManage(object):
               self.cinder.volume_snapshots.create(volume.id,force=True,display_name=snapname)
             else:
               self.cinder.volume_snapshots.create(volume.id,force=True,name=snapname)
-            #fonction clean
+          #fonction clean all
       else:
         print "start snapshot image %s" % id
         snapname = 'backup_' +self.nova.servers.get(self.cinder.volumes.get(id).attachments[0]['server_id']).name+'_'+id+'_'+datetime.datetime.now().strftime('%Y%m%d')
