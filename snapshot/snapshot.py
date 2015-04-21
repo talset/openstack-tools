@@ -19,10 +19,10 @@ LOG.setLevel(logging.CRITICAL)
 INSECURE=True
 
 #Retention image
-IMAGE_RET=4
+IMAGE_RET=7
 
 #Retention volume
-VOLUME_RET=4
+VOLUME_RET=7
 
 #Retention VFS Volume from snapshot
 VOLUMEFROMSNAP_RET=1
@@ -150,7 +150,7 @@ class BackupManage(object):
                 vfs_list[name].append({'id': volume_from_snap.id, 'date': date})
         self.delete_volumes_from_snap(self.check_for_oldest(vfs_list,VOLUMEFROMSNAP_RET))
       else:
-        for volume_from_snap in self.cinder.volume_from_snap.list():
+        for volume_from_snap in self.cinder.volumes.list():
             volume_from_snap_name=str(getattr(volume_from_snap, argname))
             if re.search('^backup_.*'+id, volume_from_snap_name):
                 (name, date) = volume_from_snap_name.rsplit('_',1)
@@ -324,16 +324,7 @@ class BackupManage(object):
                         self.cinder.volumes.create(snapshots_sorted[0]['size'],snapshot_id=snapshots_sorted[0]['id'],display_name=snapname)
                 else:
                         self.cinder.volumes.create(snapshots_sorted[0]['size'],snapshot_id=snapshots_sorted[0]['id'],name=snapname)
-                #self.cinder.volumes.create()
-#cinder create --snapshot-id 7c00fb1d-428d-4511-92e0-f9d1657d27a5 --display-name volume_from_snap 5
-#create(self, size, consistencygroup_id=None, snapshot_id=None,
-#               source_volid=None, name=None, description=None,
-#               volume_type=None, user_id=None,
-#               project_id=None, availability_zone=None,
-#               metadata=None, imageRef=None, scheduler_hints=None,
-#               source_replica=None):
-#                print " - volume-from-snap %s from %s" % (snapname, snapshots_sorted[0]['id'])
-
+        
         #foreach volume_from_snap
         #check retention for all volume from snap
         self.volume_from_snap_clean('all')
