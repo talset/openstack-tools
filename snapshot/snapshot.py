@@ -92,7 +92,7 @@ class BackupManage(object):
                                       os_tenant_name,
                                       os_auth_url,
                                       service_type="volume",
-                                      insecure=True)
+                                      insecure=INSECURE)
 
     self.cinder.authenticate()
     self.cinder_endpoint_version=self.cinder.get_volume_api_version_from_endpoint()
@@ -102,7 +102,7 @@ class BackupManage(object):
                                       os_tenant_name,
                                       os_auth_url,
                                       service_type="volume",
-                                      insecure=True)
+                                      insecure=INSECURE)
 
 
   def get_snapshot_list(self,type):
