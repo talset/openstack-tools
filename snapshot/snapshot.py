@@ -104,17 +104,16 @@ class NovaManage(object):
       print "Snapshot Images : "
       for image in self.nova.images.list():
         if image.name.startswith('backup'):
-          print "%s" % (image.name)
+          print " - %s %s" % (image.id, image.name)
 
       #print self.nova.volumes.list()
       #print self.nova.volume_snapshots.list()
       #print self.cinder.volumes.list()
 
-
       print "Snapshot Volumes : "
       for volume in self.cinder.volume_snapshots.list():
         #help(volume)
-        print "%s %s" % (volume.id, volume.display_name)
+        print " - %s %s" % (volume.id, volume.display_name)
 
   def snap_volume_clean(self,id):
       "clean snapshot"
@@ -137,25 +136,43 @@ class NovaManage(object):
                     volumes_list[name] = []
                 volumes_list[name].append({'id': volume_snapshots.id, 'date': date})
                 #print name+' '+str(volumes_list[name])
-        print self.check_for_oldest(volumes_list,VOLUME_RET)
+        self.delete_volumes(self.check_for_oldest(volumes_list,VOLUME_RET))
       else:
         for volume_snapshots in self.cinder.volume_snapshots.list():
             #print dir(volume_snapshots)
             if re.search('^backup_.*'+id, volume_snapshots.display_name):
                 volumes_list[name].append({'id': volume_snapshots.id, 'date': date})
                 print name+' '+str(volumes_list[name])
-        print self.check_for_oldest(volumes_list,VOLUME_RET)
+        self.delete_volumes(self.check_for_oldest(volumes_list,VOLUME_RET))
 
   def check_for_oldest(self,backup_list,ret):
       "Find useless snapshot"
-      print backup_list
+      print "Find useless snapshot"
+      oldest_snapshot = []
       for instance, snapshots in backup_list.iteritems():
-        print instance
+        print "  For backup %s" % instance
+        #Sort by date (newest to oldest)
         snapshots_sorted=sorted(snapshots, key=lambda x:x['date'], reverse=True)
-        print snapshots_sorted[1:]
-        #for snapshot in snapshots_sorted:
-        #    print str(snapshot)
-      return ['id1', 'id2']
+        print "    %s snapshots to delete" % len(snapshots_sorted[ret:])
+        #keep "ret" snapshot for the retention and return the other
+        oldest_snapshot += snapshots_sorted[ret:]
+      
+      #Return snapshot to delete
+      return oldest_snapshot
+
+  def delete_volumes(self,volume_snapshots):
+      "Delete volume snapshots"
+      print "Delete volume snapshots"
+      if self.cinder_endpoint_version == '1':
+         argname='display_name'
+      else:
+         argname='name'
+
+      for volume_snapshot in volume_snapshots:
+          snap=self.cinder.volume_snapshots.get(volume_snapshot['id'])
+          snap_name=str(getattr(snap, argname))
+          print " - delete %s" % (snap_name)
+          self.cinder.volume_snapshots.delete(snap)
 
   def snapshot(self,type,id):
       "Start snapshot"
@@ -173,39 +190,43 @@ class NovaManage(object):
   def snap_image(self,id):
       "Start image snapshot"
       LOG.info('Start snapshot image ...')
+      print "Start snapshot image"
       if id == 'all':
         for server in self.nova.servers.list():
-          print "start snap image %s" % (server.name)
+          print " - image-snapshot %s" % snapname
           snapname = 'backup_' +server.name+'_'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
           self.nova.servers.get(id).backup(snapname, 'daily', IMAGE_RET)
       else:
-        print "start snapshot image %s" % id
         snapname = 'backup_' +self.nova.servers.get(id).name+'_'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+        print " - image-snapshot %s" % snapname
         self.nova.servers.get(id).backup(snapname, 'daily', IMAGE_RET)
 
 
   def snap_volume(self,id):
       "Start volume snapshot"
+      print "Start volume snapshot"
       LOG.info('Start volume snapshot ...')
       if id == 'all':
         for volume in self.cinder.volumes.list():
           if volume.status == 'in-use':
             snapname = 'backup_'+self.nova.servers.get(volume.attachments[0]['server_id']).name+'_'+volume.id+'_'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-            print "start snap image %s" % snapname
+            print " - volume-snapshot %s" % snapname
             if self.cinder_endpoint_version == '1':
               self.cinder.volume_snapshots.create(volume.id,force=True,display_name=snapname)
             else:
               self.cinder.volume_snapshots.create(volume.id,force=True,name=snapname)
-          #fonction clean all
+        #fonction clean all
+        self.snap_volume_clean('all')
       else:
         print "start snapshot image %s" % id
         snapname = 'backup_' +self.nova.servers.get(self.cinder.volumes.get(id).attachments[0]['server_id']).name+'_'+id+'_'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-        print snapname
+        print " - volume-snapshot %s" % snapname
         if self.cinder_endpoint_version == '1':
           self.cinder.volume_snapshots.create(id,force=True,display_name=snapname)
         else:
           self.cinder.volume_snapshots.create(id,force=True,name=snapname)
         #fonction clean
+        self.snap_volume_clean(id)
 
 if __name__ == "__main__":
 
