@@ -256,8 +256,8 @@ class BackupManage(object):
       print "Start snapshot image"
       if id == 'all':
         for server in self.nova.servers.list():
-          print " - image-snapshot %s" % snapname
           snapname = 'backup_' +server.name+'_'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+          print " - image-snapshot %s" % snapname
           self.nova.servers.get(id).backup(snapname, 'daily', IMAGE_RET)
       else:
         snapname = 'backup_' +self.nova.servers.get(id).name+'_'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
