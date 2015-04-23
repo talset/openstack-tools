@@ -27,6 +27,8 @@ VOLUME_RET=7
 #Retention VFS Volume from snapshot
 VOLUMEFROMSNAP_RET=1
 
+DEBUG=False
+
 # Get args
 PARSER = argparse.ArgumentParser()
 PARSER.add_argument("-osti", "--os-tenant-id",
@@ -221,7 +223,8 @@ class BackupManage(object):
           snap=self.cinder.volume_snapshots.get(volume_snapshot['id'])
           snap_name=str(getattr(snap, argname))
           print " - delete %s" % (snap_name)
-          self.cinder.volume_snapshots.delete(snap)
+          if DEBUG == False:
+            self.cinder.volume_snapshots.delete(snap)
 
   def delete_volumes_from_snap(self,volumes_from_snap):
       "Delete volume from snapshots"
@@ -235,7 +238,8 @@ class BackupManage(object):
           snap=self.cinder.volumes.get(volume_from_snap['id'])
           snap_name=str(getattr(snap, argname))
           print " - delete %s" % (snap_name)
-          self.cinder.volumes.delete(snap)
+          if DEBUG == False:
+            self.cinder.volumes.delete(snap)
 
   def snapshot(self,type,id):
       "Start snapshot"
@@ -258,11 +262,13 @@ class BackupManage(object):
         for server in self.nova.servers.list():
           snapname = 'backup_' +server.name+'_'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
           print " - image-snapshot %s" % snapname
-          self.nova.servers.get(id).backup(snapname, 'daily', IMAGE_RET)
+          if DEBUG == False:
+            server.backup(snapname, 'daily', IMAGE_RET)
       else:
         snapname = 'backup_' +self.nova.servers.get(id).name+'_'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
         print " - image-snapshot %s" % snapname
-        self.nova.servers.get(id).backup(snapname, 'daily', IMAGE_RET)
+        if DEBUG == False:
+          self.nova.servers.get(id).backup(snapname, 'daily', IMAGE_RET)
 
 
   def snap_volume(self,id):
@@ -274,20 +280,21 @@ class BackupManage(object):
           if volume.status == 'in-use':
             snapname = 'backup_'+self.nova.servers.get(volume.attachments[0]['server_id']).name+'_'+volume.id+'_'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
             print " - volume-snapshot %s" % snapname
-            if self.cinder_endpoint_version == '1':
-              self.cinder.volume_snapshots.create(volume.id,force=True,display_name=snapname)
-            else:
-              self.cinder.volume_snapshots.create(volume.id,force=True,name=snapname)
+            if DEBUG == False:
+              if self.cinder_endpoint_version == '1':
+                self.cinder.volume_snapshots.create(volume.id,force=True,display_name=snapname)
+              else:
+                self.cinder.volume_snapshots.create(volume.id,force=True,name=snapname)
         #fonction clean all
         self.snap_volume_clean('all')
       else:
-        print "start snapshot image %s" % id
         snapname = 'backup_' +self.nova.servers.get(self.cinder.volumes.get(id).attachments[0]['server_id']).name+'_'+id+'_'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
         print " - volume-snapshot %s" % snapname
-        if self.cinder_endpoint_version == '1':
-          self.cinder.volume_snapshots.create(id,force=True,display_name=snapname)
-        else:
-          self.cinder.volume_snapshots.create(id,force=True,name=snapname)
+        if DEBUG == False:
+          if self.cinder_endpoint_version == '1':
+            self.cinder.volume_snapshots.create(id,force=True,display_name=snapname)
+          else:
+            self.cinder.volume_snapshots.create(id,force=True,name=snapname)
         #fonction clean
         self.snap_volume_clean(id)
 
@@ -319,11 +326,13 @@ class BackupManage(object):
                 #create a volum from the latest snap
                 snapname = re.sub("^backup_", 'backup_VFS_', instance)+'_'+snapshots_sorted[0]['date']
                 ##CREATE VOLUME
-                print "size %s snapshot_id %s name %s" % (snapshots_sorted[0]['size'], snapshots_sorted[0]['id'], snapname)
-                if self.cinder_endpoint_version == '1':
-                        self.cinder.volumes.create(snapshots_sorted[0]['size'],snapshot_id=snapshots_sorted[0]['id'],display_name=snapname)
-                else:
-                        self.cinder.volumes.create(snapshots_sorted[0]['size'],snapshot_id=snapshots_sorted[0]['id'],name=snapname)
+                #print "size %s snapshot_id %s name %s" % (snapshots_sorted[0]['size'], snapshots_sorted[0]['id'], snapname)
+                print " - volume-from-snap %s from %s" % (snapname,snapshots_sorted[0]['id'])
+                if DEBUG == False:
+                  if self.cinder_endpoint_version == '1':
+                          self.cinder.volumes.create(snapshots_sorted[0]['size'],snapshot_id=snapshots_sorted[0]['id'],display_name=snapname)
+                  else:
+                          self.cinder.volumes.create(snapshots_sorted[0]['size'],snapshot_id=snapshots_sorted[0]['id'],name=snapname)
         
         #foreach volume_from_snap
         #check retention for all volume from snap
@@ -334,7 +343,13 @@ class BackupManage(object):
         snapshot_name=str(getattr(snapshot, argname))
 
         snapname = re.sub("^backup_", 'backup_VFS_', snapshot_name)
+        ##CREATE VOLUME
         print " - volume-from-snap %s from %s" % (snapname,id)
+        if DEBUG == False:
+          if self.cinder_endpoint_version == '1':
+                  self.cinder.volumes.create(snapshot.size,snapshot_id=id,display_name=snapname)
+          else:
+                  self.cinder.volumes.create(snapshot.size,snapshot_id=id,name=snapname)
         ##CREATE VOLUME
 
         #check retention for volume from snapshot_id
