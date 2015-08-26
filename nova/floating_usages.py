@@ -32,12 +32,13 @@ PARSER.add_argument("-osurl", "--os-auth-url",
 PARSER.add_argument("-nv", "--nova-version",
             help="Nova client version. Defaults to 2",
             default=2)
+PARSER.add_argument("-t", "--tenant",
+            help="Which tenant to list floating ips. Defaults to env[OS_TENANT_NAME]",
+            default=os.getenv('OS_TENANT_NAME'))
 PARSER.add_argument("-f", "--flavors",
             action='store_true',
             help="print flavor for each vms",
             default=False)
-PARSER.add_argument("-e", "--export-all",
-            help="export vms config in file given ex : /tmp/OSexport.json")
 ARGS = PARSER.parse_args()
 
 
